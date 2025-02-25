@@ -1,26 +1,37 @@
-# Use an official Node.js runtime as a parent image
-FROM node:18-alpine
+FROM node:18-slim
 
-# Set the working directory inside the container
+# Install dependencies for Playwright
+RUN apt-get update && apt-get install -y \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libnspr4 \
+    libssl1.1 \
+    libfuse2 \
+    wget
+
+# Set the working directory
 WORKDIR /app
 
-# Copy the package.json and yarn.lock files
+# Copy package.json and install dependencies
 COPY package.json yarn.lock ./
+RUN yarn install
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
+# Install Playwright and necessary browsers
+RUN npx playwright install
 
-# Copy the rest of the application code
+# Copy project files
 COPY . .
 
-# Build the Astro project (creates static files in the 'dist' folder)
+# Build the project
 RUN yarn build
 
-# Install serve globally to serve static files
+# Serve the static files
 RUN yarn global add serve
-
-# Expose port 80 (default for web traffic)
-EXPOSE 80
-
-# Start the app in production mode using serve
-CMD ["serve", "-s", "dist", "-l", "80"]
+CMD ["serve", "-s", "dist"]
