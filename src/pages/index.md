@@ -5,7 +5,7 @@ layout: ../layouts/Minimalist.astro
 pdfLink: resume.pdf
 ---
 
-# Richard Hendriks TEST 3
+# Richard Hendriks TEST 4
 
 **Programmer**
 
