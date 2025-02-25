@@ -12,19 +12,16 @@ RUN apt-get update && apt-get install -y \
     libgbm1 \
     libasound2 \
     libnspr4 \
-    libssl1.1 \
+    libssl3 \
     libfuse2 \
     wget
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and install dependencies
+# Install dependencies
 COPY package.json yarn.lock ./
 RUN yarn install
-
-# Install Playwright and necessary browsers
-RUN npx playwright install
 
 # Copy project files
 COPY . .
@@ -32,6 +29,8 @@ COPY . .
 # Build the project
 RUN yarn build
 
-# Serve the static files
-RUN yarn global add serve
-CMD ["serve", "-s", "dist"]
+# Expose port
+EXPOSE 80
+
+# Start the application
+CMD ["yarn", "start"]
