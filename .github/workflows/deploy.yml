@@ -43,7 +43,7 @@ jobs:
       # Step 6: SSH into the server and deploy the Docker container
       - name: Deploy to server via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 user@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr user@${{ secrets.SERVER_IP }} << 'EOF'
             # Pull the latest Docker image from Docker Hub
             docker pull ulvihas/astroresume:latest
 
