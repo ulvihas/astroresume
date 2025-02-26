@@ -48,6 +48,12 @@ jobs:
       - name: Debug SSH Setup
         run: ls -la ~/.ssh
 
+      # Step 6.2: Debug SSH Setup (SSH loaded into the agent?)
+        
+      - name: Debug SSH Key
+        run: ssh-add -l
+        
+
       # Step 7: SSH into the server and deploy the Docker container
       - name: Deploy to server via SSH
         run: |
