@@ -3,75 +3,95 @@ name: Deploy Astro Site
 on:
   push:
     branches:
-      - main  # Triggers deployment when pushing to 'main' branch
+      - main  # Triggers deployment when changes are pushed to the 'main' branch
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Pull the latest code
+      # Step 1: Check out the code from the GitHub repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Docker Buildx
+      # Step 2: Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # 3️⃣ Log in to Docker Hub
+      # Step 3: Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}  # Docker Hub username
           password: ${{ secrets.DOCKERHUB_TOKEN }}  # Docker Hub token
 
-      # 4️⃣ Build and push Docker image to Docker Hub
+      # Step 4: Build and push Docker image to Docker Hub
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: .  # Use current directory
-          file: ./Dockerfile  # Specify Dockerfile
+          context: .  # Current directory, where the Dockerfile and project exist
+          file: ./Dockerfile
           push: true
-          tags: ulvihas/astroresume:latest  # Image tag
+          tags: ulvihas/astroresume:latest  # Your Docker image tag
 
-      # 5️⃣ Set up SSH key for server access
+      # Step 5: Set up SSH key for server access
       - name: Set up SSH key for server access
         run: |
-          set -e  # Exit if any command fails
+          echo "Step 5: Setting up SSH key..."
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/vultr  # Save key
-          chmod 600 ~/.ssh/vultr  # Secure file permissions
-          eval "$(ssh-agent -s)"  # Start SSH agent
-          ssh-add ~/.ssh/vultr  # Add key to agent
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/vultr  # Remove carriage returns
+          chmod 600 ~/.ssh/vultr
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/vultr
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts  # Avoid SSH prompts
+          echo "Step 5 completed."
 
-      # 6️⃣ Debug SSH Setup (Check if the key is added)
-      - name: Debug SSH Key
-        run: ssh-add -l  # List loaded SSH keys
+      # Step 6: Debug SSH Setup (Check if SSH key exists)
+      - name: Debug SSH Key File
+        run: |
+          echo "Step 6: Checking SSH key file..."
+          ls -lah ~/.ssh || echo "No SSH files found!"
+          cat ~/.ssh/vultr || echo "SSH private key file missing!"
+          echo "Step 6 completed."
 
-      # 7️⃣ Debug SSH Setup (Check if the file exists)
-      - name: Check SSH Key File
-        run: ls -la ~/.ssh  # List files in .ssh directory
+      # Step 7: Check if SSH key is loaded
+      - name: Debug SSH Key Loaded
+        run: |
+          echo "Step 7: Checking if SSH key is loaded..."
+          ssh-add -l || echo "SSH key not loaded!"
+          echo "Step 7 completed."
 
-      # 8️⃣ Debug SSH Key Contents (Safe Check)
-      - name: Show SSH Key in GitHub Runner
-        run: cat ~/.ssh/vultr  # Print key (DO NOT DO THIS IN PRODUCTION)
+      # Step 8: Test SSH Connection to Server
+      - name: Debug SSH Connection
+        run: |
+          echo "Step 8: Testing SSH connection..."
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} -v || echo "SSH connection failed!"
+          echo "Step 8 completed."
 
-      # 9️⃣ Debug SSH Connection (Verbose Output)
-      - name: Test SSH Connection
-        run: ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} exit
+      # Step 9: Ensure SSH agent is running properly
+      - name: Debug SSH Agent
+        run: |
+          echo "Step 9: Checking SSH agent..."
+          ps aux | grep ssh-agent || echo "SSH agent is not running!"
+          echo "Step 9 completed."
 
-      # 🔟 Deploy to server via SSH
+      # Step 10: Final SSH Verification Before Deployment
+      - name: Final SSH Check Before Deployment
+        run: |
+          echo "Step 10: Final SSH verification..."
+          ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} || echo "Final SSH connection failed!"
+          echo "Step 10 completed."
+
+      # Step 11: SSH into the server and deploy the Docker container
       - name: Deploy to server via SSH
         run: |
+          echo "Step 11: Deploying application..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} << 'EOF'
-            # Pull the latest Docker image from Docker Hub
+            echo "Connected to server. Starting deployment..."
             docker pull ulvihas/astroresume:latest
-
-            # Stop and remove the old container (if exists)
             docker stop astro-container || true
             docker rm astro-container || true
-
-            # Run the new container with port 80 exposed
             docker run -d --name astro-container -p 80:80 ulvihas/astroresume:latest
+            echo "Deployment complete!"
           EOF
+          echo "Step 11 completed."
