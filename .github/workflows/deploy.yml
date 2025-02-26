@@ -75,7 +75,37 @@ jobs:
       - name: Test Network Connectivity from CI/CD Runner
         run: |
           echo "Step 6: Testing Network Connectivity from CI/CD Runner..."
-          nc -zv ${{ secrets.SERVER_IP }} 22 || echo "CI/CD runner cannot reach the server!"
+
+          # Display the current system IP to verify the server’s address
+          echo "Server's IP Address:"
+          curl -s ifconfig.me
+          
+          # Pinging the server to check if it is reachable
+          echo "Pinging the server to check if it's reachable..."
+          ping -c 4 **YOUR_SERVER_IP** || echo "Unable to ping the server!"
+          
+          # Test network connectivity to port 22 using nc (netcat)
+          echo "Testing TCP connection on port 22..."
+          nc -zv **YOUR_SERVER_IP** 22 || echo "CI/CD runner cannot reach the server on port 22!"
+          
+          # Check if the server is listening on port 22 (SSH)
+          echo "Checking if the server is listening on port 22..."
+          nc -zv localhost 22 || echo "The server is not listening on port 22 locally!"
+          
+          # Check the public IP and the server's DNS
+          echo "Verifying the DNS resolution for your server's domain..."
+          nslookup **YOUR_SERVER_DOMAIN** || echo "DNS lookup failed for the server!"
+          
+          # Display routing table to check if there are any routing issues
+          echo "Checking the routing table on the CI/CD runner..."
+          route -n || echo "Unable to fetch the routing table!"
+          
+          # Check if there are any firewall rules that could be blocking connections
+          echo "Displaying the firewall rules on the server..."
+          sudo iptables -L || echo "Unable to fetch iptables rules!"
+          
+          echo "Step 6 completed. Please review the above information for further diagnostics."
+
 
       # Step 7: Debug SSH Connection Before Proceeding
       - name: Debug SSH Connection
