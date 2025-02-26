@@ -36,11 +36,18 @@ jobs:
 
       # Step 5: Set up SSH key for server access (SSH private key stored as a secret)
       - name: Set up SSH key for server access
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}  # SSH private key stored as a secret
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/vultr
+          chmod 600 ~/.ssh/vultr
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/vultr
 
-      # Step 6: SSH into the server and deploy the Docker container
+      # Step 6: Debug SSH Setup (optional, remove if not needed)
+      - name: Debug SSH Setup
+        run: ls -la ~/.ssh
+
+      # Step 7: SSH into the server and deploy the Docker container
       - name: Deploy to server via SSH
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr user@${{ secrets.SERVER_IP }} << 'EOF'
