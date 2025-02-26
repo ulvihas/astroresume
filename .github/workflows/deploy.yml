@@ -34,58 +34,52 @@ jobs:
           push: true
           tags: ulvihas/astroresume:latest  # Your Docker image tag
 
-      # Step 5: Set up SSH key for server access
+      # Step 5: Set up SSH key for server access (Added More Debugging)
       - name: Set up SSH key for server access
         run: |
           echo "Step 5: Setting up SSH key..."
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/vultr  # Remove carriage returns
+          
+          echo "Step 5.1: Checking if ~/.ssh exists..."
+          ls -lah ~/.ssh || echo "No ~/.ssh directory found!"
+          
+          echo "Step 5.2: Writing SSH key to file..."
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/vultr
+          
+          echo "Step 5.3: Checking if SSH key file exists..."
+          ls -lah ~/.ssh/vultr || echo "SSH key file missing!"
+          
+          echo "Step 5.4: Setting file permissions..."
           chmod 600 ~/.ssh/vultr
+          
+          echo "Step 5.5: Verifying permissions..."
+          ls -lah ~/.ssh/vultr
+          
+          echo "Step 5.6: Starting SSH agent..."
           eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/vultr
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts  # Avoid SSH prompts
-          echo "Step 5 completed."
+          
+          echo "Step 5.7: Adding SSH key to agent..."
+          ssh-add ~/.ssh/vultr || echo "Failed to add SSH key!"
+          
+          echo "Step 5.8: Listing added SSH keys..."
+          ssh-add -l || echo "No keys found in SSH agent!"
+          
+          echo "Step 5.9: Adding server to known hosts..."
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts || echo "Failed to add known hosts!"
+          
+          echo "Step 5 completed successfully."
 
-      # Step 6: Debug SSH Setup (Check if SSH key exists)
-      - name: Debug SSH Key File
-        run: |
-          echo "Step 6: Checking SSH key file..."
-          ls -lah ~/.ssh || echo "No SSH files found!"
-          cat ~/.ssh/vultr || echo "SSH private key file missing!"
-          echo "Step 6 completed."
-
-      # Step 7: Check if SSH key is loaded
-      - name: Debug SSH Key Loaded
-        run: |
-          echo "Step 7: Checking if SSH key is loaded..."
-          ssh-add -l || echo "SSH key not loaded!"
-          echo "Step 7 completed."
-
-      # Step 8: Test SSH Connection to Server
+      # Step 6: Debug SSH Connection Before Proceeding
       - name: Debug SSH Connection
         run: |
-          echo "Step 8: Testing SSH connection..."
+          echo "Step 6: Testing SSH connection..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} -v || echo "SSH connection failed!"
-          echo "Step 8 completed."
-
-      # Step 9: Ensure SSH agent is running properly
-      - name: Debug SSH Agent
-        run: |
-          echo "Step 9: Checking SSH agent..."
-          ps aux | grep ssh-agent || echo "SSH agent is not running!"
-          echo "Step 9 completed."
-
-      # Step 10: Final SSH Verification Before Deployment
-      - name: Final SSH Check Before Deployment
-        run: |
-          echo "Step 10: Final SSH verification..."
-          ssh -T -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} || echo "Final SSH connection failed!"
-          echo "Step 10 completed."
-
-      # Step 11: SSH into the server and deploy the Docker container
+          echo "Step 6 completed."
+          
+      # Step 7: Deploy to server via SSH
       - name: Deploy to server via SSH
         run: |
-          echo "Step 11: Deploying application..."
+          echo "Step 7: Deploying application..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} << 'EOF'
             echo "Connected to server. Starting deployment..."
             docker pull ulvihas/astroresume:latest
@@ -94,4 +88,4 @@ jobs:
             docker run -d --name astro-container -p 80:80 ulvihas/astroresume:latest
             echo "Deployment complete!"
           EOF
-          echo "Step 11 completed."
+          echo "Step 7 completed."
