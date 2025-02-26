@@ -37,6 +37,8 @@ jobs:
       # Step 5: Set up SSH key for server access (Added More Debugging)
       - name: Set up SSH key for server access
         run: |
+          set -e  # Exit if any command fails
+
           echo "Step 5: Setting up SSH key..."
           mkdir -p ~/.ssh
           
@@ -69,17 +71,23 @@ jobs:
           
           echo "Step 5 completed successfully."
 
-      # Step 6: Debug SSH Connection Before Proceeding
+      # Step 6: Testing Network Connectivity
+      - name: Test Network Connectivity from CI/CD Runner
+        run: |
+          echo "Step 6: Testing Network Connectivity from CI/CD Runner..."
+          nc -zv ${{ secrets.SERVER_IP }} 22 || echo "CI/CD runner cannot reach the server!"
+
+      # Step 7: Debug SSH Connection Before Proceeding
       - name: Debug SSH Connection
         run: |
-          echo "Step 6: Testing SSH connection..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} -v || echo "SSH connection failed!"
-          echo "Step 6 completed."
-          
-      # Step 7: Deploy to server via SSH
+          echo "Step 7: Testing SSH connection..."
+          ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} || echo "SSH connection failed!"
+          echo "Step 7 completed."
+
+      # Step 8: Deploy to server via SSH
       - name: Deploy to server via SSH
         run: |
-          echo "Step 7: Deploying application..."
+          echo "Step 8: Deploying application..."
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} << 'EOF'
             echo "Connected to server. Starting deployment..."
             docker pull ulvihas/astroresume:latest
@@ -88,4 +96,4 @@ jobs:
             docker run -d --name astro-container -p 80:80 ulvihas/astroresume:latest
             echo "Deployment complete!"
           EOF
-          echo "Step 7 completed."
+          echo "Step 8 completed."
