@@ -1,23 +1,45 @@
-# Use a slim Node.js image as the base
-FROM node:18-slim
+# Use a base image with Debian (instead of Alpine) for better compatibility
+FROM node:18-bullseye
 
 # Set working directory
 WORKDIR /app
 
-# Copy only package.json and yarn.lock to leverage Docker caching and avoid unnecessary installs
+# Copy package.json and install dependencies first (for better caching)
 COPY package.json yarn.lock ./
-
-# Install dependencies using yarn
 RUN yarn install --frozen-lockfile
 
-# Copy the rest of the application code
+# Install missing system utilities
+RUN apt-get update && apt-get install -y \
+    procps \
+    curl \
+    fonts-liberation \
+    libasound2 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libxrender1 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the rest of the project files
 COPY . .
 
-# Run yarn build and output verbose logs for troubleshooting
+# Run build step
 RUN yarn build --verbose
 
-# Expose the port the app will run on
+# Expose the port for the app
 EXPOSE 80
 
-# Set the command to run your app
+# Start the application
 CMD ["yarn", "start"]
