@@ -52,7 +52,18 @@ jobs:
         
       - name: Debug SSH Key
         run: ssh-add -l
+
+      # Step 6.3: Debug SSH Setup (check the key)
+      - name: Show SSH Key in GitHub Runner (Safe Check)
+        run: cat ~/.ssh/vultr
+
         
+      # Step 6.4 Debug SSH Setup (check connection)
+        
+      - name: Debug SSH Connection
+        run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} -v
+
+
 
       # Step 7: SSH into the server and deploy the Docker container
       - name: Deploy to server via SSH
