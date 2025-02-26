@@ -67,7 +67,7 @@ jobs:
           ssh-add -l || echo "No keys found in SSH agent!"
           
           echo "Step 5.9: Adding server to known hosts..."
-          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts || echo "Failed to add known hosts!"
+          ssh-keyscan -H "104.238.158.154" >> ~/.ssh/known_hosts || echo "Failed to add known hosts!"
           
           echo "Step 5 completed successfully."
 
@@ -106,19 +106,18 @@ jobs:
           echo "Step 6 completed. Please review the above information for further diagnostics."
 
 
-
       # Step 7: Debug SSH Connection Before Proceeding
       - name: Debug SSH Connection
         run: |
           echo "Step 7: Testing SSH connection..."
-          ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} || echo "SSH connection failed!"
+          ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@104.238.158.154 || echo "SSH connection failed!"
           echo "Step 7 completed."
 
       # Step 8: Deploy to server via SSH
       - name: Deploy to server via SSH
         run: |
           echo "Step 8: Deploying application..."
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/vultr root@104.238.158.154 << 'EOF'
             echo "Connected to server. Starting deployment..."
             docker pull ulvihas/astroresume:latest
             docker stop astro-container || true
