@@ -1,0 +1,10 @@
+services:
+  image: ulvihasanli/astroresume:latest
+  container_name: astroresume
+  expose: 
+    - 80
+  networks:
+    - proxy
+networks:
+  proxy:
+    external: true
